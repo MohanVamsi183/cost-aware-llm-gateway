@@ -1,0 +1,20 @@
+[
+  {
+    "tenant_id": "acme-support",
+    "name": "Acme Support Bot",
+    "api_key": "tk_acme_demo_001",
+    "monthly_budget_usd": 2.00
+  },
+  {
+    "tenant_id": "globex-research",
+    "name": "Globex Research Assistant",
+    "api_key": "tk_globex_demo_002",
+    "monthly_budget_usd": 5.00
+  },
+  {
+    "tenant_id": "initech-intern",
+    "name": "Initech Intern Sandbox",
+    "api_key": "tk_initech_demo_003",
+    "monthly_budget_usd": 0.006
+  }
+]
