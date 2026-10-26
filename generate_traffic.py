@@ -81,12 +81,15 @@ def send(_):
         "Content-Type": "application/json", "Authorization": f"Bearer {key}"})
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
-            g = json.load(r)["gateway"]
-            return g["tenant_id"], g["tier"], g["routing_reason"], g["cost_usd"]
+            data = json.load(r)
+            g, u = data["gateway"], data["usage"]
+            # What the SAME tokens would have cost on Nova Pro ($0.80 in / $3.20 out per 1M)
+            all_pro = (u["prompt_tokens"] * 0.80 + u["completion_tokens"] * 3.20) / 1_000_000
+            return g["tenant_id"], g["tier"], g["routing_reason"], g["cost_usd"], all_pro
     except urllib.error.HTTPError as e:
-        return TENANT_OF[key], "BLOCKED" if e.code == 429 else f"HTTP {e.code}", "", 0.0
+        return TENANT_OF[key], "BLOCKED" if e.code == 429 else f"HTTP {e.code}", "", 0.0, 0.0
     except Exception as e:
-        return TENANT_OF[key], "ERROR", str(e)[:60], 0.0
+        return TENANT_OF[key], "ERROR", str(e)[:60], 0.0, 0.0
 
 
 if __name__ == "__main__":
@@ -109,8 +112,16 @@ if __name__ == "__main__":
 
     print("\nSpend by tenant (gateway's own numbers, compare with Revenium):")
     spend = Counter()
-    for tenant, _, _, cost in results:
+    for tenant, _, _, cost, _ in results:
         spend[tenant] += cost
     for tenant, usd in spend.most_common():
         print(f"  {tenant:22} ${usd:.6f}")
     print(f"  {'TOTAL':22} ${sum(spend.values()):.6f}")
+
+    actual = sum(r[3] for r in results)
+    baseline = sum(r[4] for r in results)
+    if baseline > 0:
+        print("\nSavings from routing (same requests, same token counts):")
+        print(f"  If every request went to Nova Pro:  ${baseline:.6f}")
+        print(f"  Actual cost through the gateway:    ${actual:.6f}")
+        print(f"  Saved:                              ${baseline - actual:.6f}  ({(1 - actual / baseline) * 100:.0f}% less)")
